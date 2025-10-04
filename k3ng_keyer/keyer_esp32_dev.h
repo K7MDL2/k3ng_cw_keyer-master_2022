@@ -1,5 +1,5 @@
-#ifndef keyer_h
-#define keyer_h
+#ifndef keyer_esp32_dev_h
+#define keyer_esp32_dev_h
 
 // Do not change these !
 

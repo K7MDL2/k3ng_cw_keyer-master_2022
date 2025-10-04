@@ -28,7 +28,13 @@
   void initialize_udp(void);
   void initialize_web_server(void);
   void initialize_debug_startup(void);
-  
+
+  void check_bt_keyboard();
+  void initialize_bt_keyboard();
+  void pairing_handler(uint32_t pid);
+  void keyboard_lost_connection_handler();
+  void keyboard_connected_handler();
+
   void check_paddles(void);
   void service_dit_dah_buffers(void);
   void service_send_buffer(byte);

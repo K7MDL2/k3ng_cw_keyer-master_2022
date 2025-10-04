@@ -7,20 +7,20 @@ ADC2 is utylized by WiFi so if WiFi feature is used, ADC2 pins cannot be used fo
 */
 
 /* Pins - you must review these and configure ! */
-#ifndef keyer_pin_settings_h
-#define keyer_pin_settings_h
+#ifndef keyer_pin_settings_esdp32_dev_h
+#define keyer_pin_settings_esdp32_dev_h
 
-#define paddle_left 32 //32 Needs external 10k Pullup. 32 can be used as touch paddle on ESP32 platform //SP5IOU 20220201
-#define paddle_right 33 //33 Needs external 10k Pullup. 33 can be used as touch paddle on ESP32 platform //SP5IOU 20220201
-#define tx_key_line_1 27  // (high = key down/tx on)
-#define tx_key_line_2 25 
+#define paddle_left 25 //32 Needs external 10k Pullup. 32 can be used as touch paddle on ESP32 platform //SP5IOU 20220201
+#define paddle_right 26 //33 Needs external 10k Pullup. 33 can be used as touch paddle on ESP32 platform //SP5IOU 20220201
+#define tx_key_line_1 0  // (high = key down/tx on)
+#define tx_key_line_2 0 
 #define tx_key_line_3 0
 #define tx_key_line_4 0
 #define tx_key_line_5 0
 #define tx_key_line_6 0
-#define sidetone_line 12 //23         // connect a speaker for sidetone
-#define potentiometer 39 //A3 - VN pin // Speed potentiometer (0 to 3.3V) Use pot from 1k to 10k
-#define ptt_tx_1 26             // PTT ("push to talk") lines
+#define sidetone_line 14 //23         // connect a speaker for sidetone
+#define potentiometer 0 //A3 - VN pin // Speed potentiometer (0 to 3.3V) Use pot from 1k to 10k
+#define ptt_tx_1 0             // PTT ("push to talk") lines
 #define ptt_tx_2 0              //   Can be used for keying fox transmitter, T/R switch, or keying slow boatanchors
 #define ptt_tx_3 0              //   These are optional - set to 0 if unused
 #define ptt_tx_4 0
@@ -32,7 +32,7 @@ ADC2 is utylized by WiFi so if WiFi feature is used, ADC2 pins cannot be used fo
 #define potentiometer_enable_pin 0  // if defined, the potentiometer will be enabled only when this pin is held low; set to 0 to ignore this pin
 
 #ifdef FEATURE_BUTTONS
-  #define analog_buttons_pin 36 //A0 VP pin on the board Not all pins of ESP32 are available for ADC. See https://circuits4you.com/2018/12/31/esp32-devkit-esp32-wroom-gpio-pinout/
+  #define analog_buttons_pin 0 //A0 VP pin on the board Not all pins of ESP32 are available for ADC. See https://circuits4you.com/2018/12/31/esp32-devkit-esp32-wroom-gpio-pinout/
   #define command_mode_active_led 2 //for ESP32_DEV board On Board LED
 #endif //FEATURE_BUTTONS
 
@@ -163,8 +163,8 @@ FEATURE_SIDETONE_SWITCH
 
 #define ptt_input_pin 0
 
-#define tx_inhibit_pin 0
-#define tx_pause_pin 0   
+#define tx_inhibit_pin 17
+#define tx_pause_pin 16
 
 #define pin_sending_mode_automatic 0  // goes HIGH when keyer is sending code automatically
 #define pin_sending_mode_manual 0     // goes HIGH when keyer is sending code manually (i.e. the paddle or straight key)
@@ -173,4 +173,4 @@ FEATURE_SIDETONE_SWITCH
 
   #error "Multiple pin_settings.h files included somehow..."
 
-#endif //keyer_pin_settings_h
+#endif //keyer_pin_settings_esdp32_dev_h

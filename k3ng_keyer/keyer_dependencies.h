@@ -49,3 +49,6 @@
   #error "FEATURE_COMMAND_MODE requires FEATURE_BUTTONS"
 #endif
 
+#if defined(FEATURE_BT_KEYBOARD) && !defined(HARDWARE_ESP32_DEV)
+  #error "FEATURE_BT_KEYBOARD requires HARDWARE_ESP32_DEV"
+#endif

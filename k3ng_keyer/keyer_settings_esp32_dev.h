@@ -5,9 +5,9 @@ GENERIC STM32F103C
 */
 
 // Initial and hardcoded settings
-#define initial_speed_wpm 26             // "factory default" keyer speed setting
+#define initial_speed_wpm 13             // "factory default" keyer speed setting
 #define initial_command_mode_speed_wpm 20 // "factory default" command mode speed setting 
-#define initial_sidetone_freq 600        // "factory default" sidetone frequency setting
+#define initial_sidetone_freq 700        // "factory default" sidetone frequency setting
 #define sidetone_hz_limit_low 299
 #define sidetone_hz_limit_high 2001
 #define hz_high_beep 1500                // frequency in hertz of high beep
@@ -69,8 +69,8 @@ GENERIC STM32F103C
 #define unknown_cw_character '*'
 #define cli_paddle_echo_on_at_boot 1
 #define cli_straight_key_echo_on_at_boot 1
-#define tx_key_dit_and_dah_pins_active_state HIGH
-#define tx_key_dit_and_dah_pins_inactive_state LOW
+#define tx_key_dit_and_dah_pins_active_state LOW
+#define tx_key_dit_and_dah_pins_inactive_state HIGH
 #define potentiometer_check_interval_ms 150
 #define potentiometer_reading_threshold 1 
 #define default_paddle_interruption_quiet_time_element_lengths 0
@@ -80,7 +80,7 @@ GENERIC STM32F103C
 #define eeprom_write_time_ms 30000
 
 #ifdef FEATURE_BUTTONS
-  #define analog_buttons_number_of_buttons 9 // For Keypad only command butrton is neaded 6 //4  // includes the command button (command button + 3 memory buttons = 4) //sp5iou 20180319
+  #define analog_buttons_number_of_buttons 9 // For Keypad only command button is neaded 6 //4  // includes the command button (command button + 3 memory buttons = 4) //sp5iou 20180319
   #define analog_buttons_r1 11.5
   #define analog_buttons_r2 1
 #endif

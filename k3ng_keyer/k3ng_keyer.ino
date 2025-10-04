@@ -1345,6 +1345,10 @@ Recent Update History
    Files added: keyer_features_and_options_ESP32_dev.h, keyer_settings_esp32_dev.h, keyer_pin_settings_esp32_dev.h, keyer_esp32_dev.h
    Added CLI extended command wifi <ssid> <password> .
      
+    2025.10.03 //K7MDL 
+    Modified slightly SP5IOU ESP32 changes to run on current (2025) ESP32-WROOM-32 dev board.  
+    Added BT_Keyboard Class, slightly modified from https://github.com/turgu1/bt-keyboard and converted to an Arduino library
+
   Documentation: https://github.com/k3ng/k3ng_cw_keyer/wiki
 
   Support: https://groups.io/g/radioartisan  ( Please do not email K3NG directly for support.  Thanks )
@@ -1394,10 +1398,11 @@ If you offer a hardware kit using this software, show your appreciation by sendi
   #include <FlashAsEEPROM.h> 
 #elif defined(HARDWARE_ESP32_DEV)
   #include <EEPROM.h>
-  #include <Tone32.h> // SP5IOU 2021/08/02 library Tone32h assure ESP32 compatibility with avr tone / no tone built in commands. 
-                      // Download from here https://github.com/lbernstone/Tone32
+  //#include <Tone32.h> // SP5IOU 2021/08/02 library Tone32h assure ESP32 compatibility with avr tone / no tone built in commands. 
+                      // Download from here https://github.com/lbernstone/Tone32 - do not use, now included in Arduino library
   #include "keyer_esp32_dev.h"
-#else
+  //#define ARDUINO_ARCH_ESP32
+#else // end HARDWARE_ESP32_DEV
   #include <avr/pgmspace.h>
   #include <avr/wdt.h>
   #include <EEPROM.h>  
@@ -1552,6 +1557,12 @@ If you offer a hardware kit using this software, show your appreciation by sendi
 
 #if defined(FEATURE_PS2_KEYBOARD)
   #include <K3NG_PS2Keyboard.h>
+#endif
+
+#if defined(FEATURE_BT_KEYBOARD)
+  #include <bt_keyboard.hpp>  // place in standard Arduino library folder
+  #include "esp_err.h"
+  #include "nvs_flash.h"
 #endif
 
 #if defined(FEATURE_LCD_4BIT) || defined(FEATURE_LCD1602_N07DH) || defined (FEATURE_LCD_8BIT) // works on 3.2V supply and logic, but do not work on every pins (SP5IOU)
@@ -1885,7 +1896,6 @@ byte send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
   byte ps2_keyboard_command_buffer_pointer = 0;
 #endif //FEATURE_PS2_KEYBOARD
 
-
 #ifdef FEATURE_HELL
   PROGMEM const char hell_font1[] = {B00111111, B11100000, B00011001, B11000000, B01100011, B00000001, B10011100, B00111111, B11100000,    // A
                                      B00110000, B00110000, B11111111, B11000011, B00110011, B00001100, B11001100, B00011100, B11100000,    // B
@@ -2059,6 +2069,10 @@ byte send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
     };
   HIDBoot<HID_PROTOCOL_KEYBOARD> HidKeyboard(&Usb);
   KbdRptParser KeyboardPrs;
+#endif
+
+#if defined(FEATURE_BT_KEYBOARD)
+  BTKeyboard bt_keyboard;
 #endif
 
 #if defined(FEATURE_USB_MOUSE)
@@ -6530,7 +6544,7 @@ void tx_and_sidetone_key (int state)
       if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING))) {
         #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
          #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
-              tone(sidetone_line,configuration.hz_sidetone,0,0);                                              // generate a tone on the speaker pin
+              tone(sidetone_line,configuration.hz_sidetone,0);                                              // generate a tone on the speaker pin
          #else  
         tone(sidetone_line, configuration.hz_sidetone);
         #endif
@@ -6555,7 +6569,7 @@ void tx_and_sidetone_key (int state)
         if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING))) {
           #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
           #if defined HARDWARE_ESP32_DEV //SP5IOU 20220123
-            noTone(sidetone_line,0);
+            noTone(sidetone_line);
           #else
             noTone(sidetone_line);
           #endif
@@ -6610,7 +6624,7 @@ void tx_and_sidetone_key (int state)
         if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING))) {
           #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
           #if defined HARDWARE_ESP32_DEV //SP5IOU 20220123
-            noTone(sidetone_line,0);
+            noTone(sidetone_line);
           #else
             noTone(sidetone_line);
           #endif
@@ -8071,7 +8085,7 @@ void command_progressive_5_char_echo_practice() {
               unsigned int TONEduration          =   50;                                  // define the duration of each tone element in the tone sequence to drive a speaker
               for (int k=0; k<6; k++) {
 #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
- tone(sidetone_line,NEWtone,TONEduration,0);                                              // generate a tone on the speaker pin
+ tone(sidetone_line,NEWtone,TONEduration);                                              // generate a tone on the speaker pin
 #else  
                                                                 // a loop to generate some increasing tones
                 tone(sidetone_line,NEWtone);                                              // generate a tone on the speaker pin
@@ -8439,7 +8453,7 @@ void command_sidetone_freq_adj() {
 
   while (looping) {
     #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
-              tone(sidetone_line,configuration.hz_sidetone,100,0);                                              // generate a tone on the speaker pin
+              tone(sidetone_line,configuration.hz_sidetone,100);                                              // generate a tone on the speaker pin
          #else  
           tone(sidetone_line, configuration.hz_sidetone);
         #endif
@@ -8496,7 +8510,7 @@ void command_sidetone_freq_adj() {
   }
   while (paddle_pin_read(paddle_left) == LOW || paddle_pin_read(paddle_right) == LOW || analogbuttonread(0) ) {}  // wait for all lines to go high
           #if defined HARDWARE_ESP32_DEV //SP5IOU 20220123
-            noTone(sidetone_line,0);
+            noTone(sidetone_line);
           #else
             noTone(sidetone_line);
           #endif
@@ -9015,7 +9029,7 @@ void beep()
     //   noTone(sidetone_line);
     // #else
     #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
-      tone(sidetone_line,hz_high_beep,200,0);                                              // generate a tone on the speaker pin
+      tone(sidetone_line,hz_high_beep,200);                                              // generate a tone on the speaker pin
     #else  
       tone(sidetone_line, hz_high_beep, 200);
     #endif
@@ -9034,7 +9048,7 @@ void boop()
 {
   #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
    #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
-      tone(sidetone_line,hz_low_beep,100,0);                                              // generate a tone on the speaker pin
+      tone(sidetone_line,hz_low_beep,100);                                              // generate a tone on the speaker pin
     #else  
  tone(sidetone_line, hz_low_beep);
     delay(100);
@@ -9055,8 +9069,8 @@ void beep_boop()
 {
   #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
 #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
- tone(sidetone_line,hz_high_beep,100,0);                                              // generate a tone on the speaker pin
- tone(sidetone_line,hz_low_beep,100,0);                                              // generate a tone on the speaker pin
+ tone(sidetone_line,hz_high_beep,100);                                              // generate a tone on the speaker pin
+ tone(sidetone_line,hz_low_beep,100);                                              // generate a tone on the speaker pin
 #else  
     tone(sidetone_line, hz_high_beep);
     delay(100);
@@ -9079,8 +9093,8 @@ void boop_beep()
 {
   #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
     #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220123
- tone(sidetone_line,hz_low_beep,100,0);                                              // generate a tone on the speaker pin
- tone(sidetone_line,hz_high_beep,100,0);                                              // generate a tone on the speaker pin
+ tone(sidetone_line,hz_low_beep,100);                                              // generate a tone on the speaker pin
+ tone(sidetone_line,hz_high_beep,100);                                              // generate a tone on the speaker pin
   #else  
     tone(sidetone_line, hz_low_beep);
     delay(100);
@@ -14542,7 +14556,7 @@ void receive_transmit_echo_practice(PRIMARY_SERIAL_CLS * port_to_use, byte pract
               unsigned int TONEduration          =   50;                                // define the duration of each tone element in the tone sequence to drive a speaker
               for (int k=0; k<6; k++) {                                                 // a loop to generate some increasing tones
                  #if defined(HARDWARE_ESP32_DEV) //SP5IOU 20220115
-                    tone(sidetone_line,NEWtone,TONEduration,0);                                              // generate a tone on the speaker pin
+                    tone(sidetone_line,NEWtone,TONEduration);                                              // generate a tone on the speaker pin
                 #else  
                 tone(sidetone_line,NEWtone);                                            // generate a tone on the speaker pin
                 delay(TONEduration);                                                    // hold the tone for the specified delay period
@@ -16921,7 +16935,7 @@ byte play_memory(byte memory_number) {
       
 
   } //for (int y = (memory_start(memory_number)); (y < (memory_end(memory_number)+1)); y++)
-
+  return 0;
 }
 #endif
 
@@ -18127,6 +18141,135 @@ void ps2int_write() {
   curbit++;
 }
 #endif 
+
+//--------------------------------------------------------------------- 
+#ifdef FEATURE_BT_KEYBOARD
+
+void OnKeyDown(uint8_t mod, uint8_t key) {
+    debug_serial_port->print("Key Down: ");
+    debug_serial_port->println((char)key);
+}
+
+void OnKeyPressed(uint8_t key) {
+    debug_serial_port->print("Key Pressed: ");
+    debug_serial_port->println((char)key);
+}
+
+void OnKeyUp(uint8_t mod, uint8_t key) {
+    debug_serial_port->print("Key Up: ");
+    debug_serial_port->println((char)key);
+}
+
+void pairing_handler(uint32_t pid) {
+  debug_serial_port->print("Please enter the following pairing code followed with ENTER on your keyboard: ");
+  debug_serial_port->println(pid);
+}
+
+void keyboard_lost_connection_handler() {
+  debug_serial_port->println("====> Lost connection with keyboard <====");
+}
+
+void keyboard_connected_handler() {
+   debug_serial_port->println("----> Connected to keyboard <----");
+}
+
+void initialize_bt_keyboard(){  // iint the BT 4.2 stack for ESP32-WROOM-32 for BLE and BT Classic
+  esp_err_t ret;
+  // To test the Pairing code entry, uncomment the following line as pairing info is
+        // kept in the nvs. Pairing will then be required on every boot.
+        // ESP_ERROR_CHECK(nvs_flash_erase());
+  
+  ret = nvs_flash_init();
+  if ((ret == ESP_ERR_NVS_NO_FREE_PAGES) || (ret == ESP_ERR_NVS_NEW_VERSION_FOUND)) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
+  debug_serial_port->println("BT and BLE device Scan Setup");
+  btStarted();  // attempted workarond to avoid bt_controller init failure 
+  
+  if (bt_keyboard.setup(pairing_handler, keyboard_connected_handler,
+                        keyboard_lost_connection_handler)) { // Must be called once
+      bt_keyboard.devices_scan(); // Required to discover new keyboards and for pairing
+                                // Default duration is 5 seconds
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+//
+// Here is a queue to store the characters that I've typed.
+// To simplify the code, it can store a maximum of QUEUESIZE-1 characters
+// before it fills up.  What is a byte wasted between friends?
+//
+////////////////////////////////////////////////////////////////////////
+
+// QUEUESIZE must be a power of two 
+#define QUEUESIZE       (128)
+#define QUEUEMASK       (QUEUESIZE-1)
+#define DEBUG false
+   
+int aborted = 0 ;
+int qhead = 0 ;
+int qtail = 0 ;
+char queue[QUEUESIZE] ;
+
+void
+queueadd(const char ch)
+{
+    queue[qtail++] = ch ;
+    qtail &= QUEUEMASK ;
+}
+ 
+void
+queueadd(const char *s)
+{
+  while (*s)
+      queueadd(*s++) ;
+}
+ 
+char
+queuepop()
+{
+    char ch ;
+    ch = queue[qhead++] ;
+    qhead &= QUEUEMASK ;
+    return ch ;
+}
+ 
+int
+queuefull()
+{
+    return (((qtail+1)%QUEUEMASK) == qhead) ;
+}
+ 
+int
+queueempty()
+{
+    return (qhead == qtail) ;
+}
+ 
+void
+queueflush()
+{
+    qhead = qtail ;
+}
+
+void mydelay(unsigned long ms)
+{
+    //unsigned long t = millis() ;
+
+    vTaskDelay(portTICK_PERIOD_MS * ms);
+
+    //while (millis()-t < ms)
+    //#ifdef PS2
+    //    ps2poll() ;
+    //#else
+    //  ;
+    //#endif
+}
+#endif // BT_KEYBOARD
 
 //--------------------------------------------------------------------- 
 
@@ -22305,11 +22448,6 @@ void debug_blink(){
 //
 //
 
-
-
-
-
-
 /*
 
 
@@ -22686,11 +22824,172 @@ void update_time(){
 #endif // FEATURE_CLOCK
 // --------------------------------------------------------------   
 */
+
+// --------------------------------------------------------------   
+#if defined(FEATURE_BT_KEYBOARD)
+
+void check_bt_keyboard(){
+
+    #if 0 // 0 = scan codes retrieval, 1 = augmented ASCII retrieval
+          //uint8_t ch = bt_keyboard.wait_for_ascii_char();
+            uint8_t ch = bt_keyboard.get_ascii_char(); // Without waiting
+
+        if ((ch >= ' ') && (ch < 127)) 
+            debug_serial_port->print(ch);  // << std::flush; 
+        else 
+        {
+            if (ch > 0) {
+              debug_serial_port->print('['); // << std::flush;
+              debug_serial_port->print(ch); // << std::flush;
+              debug_serial_port->print(']'); // << std::flush;
+            }
+        }
+    #else
+        char ch;
+        char ch_digit;
+        static bool keyDN = false;
+        static bool last_key = true;
+
+        BTKeyboard::KeyInfo inf;
+        bt_keyboard.wait_for_low_event(inf, 1);  // 2nd argument is time to wait for chars
+
+        // simple decoding for Rii K08 BLE mini keyboard, aka Rii model i8+
+        //std::cout << "RECEIVED KEYBOARD EVENT: ";
+        //for (int n = 0; n < inf.size; n++) {
+        if (inf.size == 8) {   // keyboard chars are len = 8, mousr and others are len=4
+            ch = inf.keys[2];
+            #ifdef DEBUG_BT_KEYBOARD
+                //debug_serial_port->print(ch);
+                //debug_serial_port->print('-');
+            #endif
+            if (ch != 0 && keyDN != true) 
+                keyDN = true;  // this is a valid alphanumeric key
+
+            if (keyDN != last_key) // only process new key events separated by key-up
+            {
+                if (ch == 0) // ignore keyups
+                {
+                    keyDN == false;
+                    //debug_serial_port->print(ch);
+                } 
+                else 
+                {
+                    keyDN = true;  // this is a valid alphanumeric key - send to processing
+                    //#ifdef DEBUG_BT_KEYBOARD
+                        debug_serial_port->print(ch,HEX);  // print our valid char
+                        debug_serial_port->print(',');
+                    //#endif
+                    if (inf.keys[0] == 2) // shift key presse
+                    {
+                        switch (ch) {     
+                            case 0x04 ... 0x1d : ch += 0x5D;  // convert to lower case letters
+                                        if (isalpha(ch)) {
+                                            if (islower(ch)) 
+                                                ch = toupper(ch);
+                                        } else ch = 0;
+                                        break;                     
+                            case 0x1e : ch = '!'; break;      // '!'  key
+                            case 0x1f : ch = '@'; break;      // '@'  key
+                            case 0x20 : ch = '#'; break;      // '#'  key
+                            case 0x21 : ch = '$'; break;      // '$'  key
+                            case 0x22 : ch = '%'; break;      // '%'  key
+                            case 0x23 : ch = '^'; break;      // '^'  key
+                            case 0x24 : ch = '&'; break;      // '&'  key
+                            case 0x25 : ch = '*'; break;      // '*'  key                            
+                            case 0x26 : ch = '('; break;      // '('  key
+                            case 0x27 : ch = ')'; break;      // ')'  key                            
+                            case 0x2D : ch = '_'; break;      // '_'  key
+                            case 0x2E : ch = '+'; break;      // '+'  key
+                            case 0x2F : ch = '{'; break;      // '{'  key
+                            case 0x30 : ch = '}'; break;      // '}'  key    
+                            case 0x31 : ch = '|'; break;      // '|' key                        
+                            case 0x33 : ch = ':'; break;      // ':'  key
+                            case 0x34 : ch = '"'; break;      // '"'  key
+                            case 0x36 : ch = '<'; break;      // '<'  key
+                            case 0x37 : ch = '>'; break;      // '>'  key
+                            case 0x38 : ch = '?'; break;      // '?' cursor key
+                        }
+                    } 
+                    else
+                    {
+                        switch (ch) {
+                            case 0x04 ... 0x1d : ch += 0x5D;  // convert to lower case letters
+                                        if (isalpha(ch)) {
+                                            if (islower(ch)) 
+                                                ch = toupper(ch);
+                                        } else ch = 0;
+                                        break;
+                            case 0x1e ... 0x26 : ch += 0x13;  // numbers 1-9
+                                        if (!isdigit(ch)) ch = 0;
+                                        break;
+                            case 0x27 : ch += 0x09;  // number 0
+                                        if (!isdigit(ch)) ch = 0;
+                                        break;
+                            case 0x28 : ch = '\n'; break;   // enter key
+                            case 0x29 : ch = '\n'; break;   // ESC key - figure out how to erase a queue or stop senbding with this
+                            case 0x2A : ch = '\n'; break;   // BACK key
+                            case 0x2B : ch = '    '; break; // TAB key
+                            case 0x2c : ch = ' '; break;    // space
+                            case 0x2D : ch = '-'; break;    // '-'  key
+                            case 0x2E : ch = '='; break;    // '='  key
+                            case 0x2F : ch = '['; break;    // '['  key                                                  
+                            case 0x30 : ch = '['; break;    // '['  key
+                            case 0x31 : ch = '\\'; break;   // '\' key
+                            case 0x33 : ch = ';'; break;    // ';'  key
+                            case 0x34 : ch = '\''; break;   // '''  key
+                            case 0x36 : ch = ','; break;    // ','  key
+                            case 0x37 : ch = '.'; break;    // '.'  key
+                            case 0x38 : ch = '/'; break;    // '/' cursor key
+                            case 0x39 : ch = '\n'; break;   // CAP LOCK toggle
+                            case 0x3A ...0x43: '\n'; break; // F1-F10 keys
+                            case 0x4F : ch = '\n'; break;   // right cursor key
+                            case 0x50 : ch = '\n'; break;   // left cursor key
+                            case 0x51 : ch = '\n'; break;   // down cursor key
+                            case 0x52 : ch = '\n'; break;   // up cursor key
+                            default   : break; //debug_serial_port->print(ch);   // filter out key up events
+                        }  // end switch ch
+                    }
+                    #ifdef DEBUG_BT_KEYBOARD
+                        debug_serial_port->print(ch);  // print our valid char
+                        debug_serial_port->print(',');
+                    #endif
+
+                    if ((ch > 31) && (ch < 255 /*123*/)) {
+                        //if (ps2_prosign_flag) {
+                        //    add_to_send_buffer(SERIAL_SEND_BUFFER_PROSIGN);
+                        //    ps2_prosign_flag = 0;
+                        //}
+                        //ch = uppercase(keystroke);
+                        add_to_send_buffer(ch);
+                        #ifdef FEATURE_MEMORIES
+                            repeat_memory = 255;
+                        #endif
+                    }
+                }
+            }
+        }
+        last_key = keyDN;
+        keyDN = false;
+            
+        #ifdef DEBUG_BT_KEYBOARD_A
+            debug_serial_port->print("[");
+            debug_serial_port->print(ch);
+            debug_serial_port->print("],");
+        #endif
+    
+
+    #endif
+}
+#endif // FEATURE_BT_KEYBOARD
+
 void setup()
 {
  initialize_pins();
 #if defined(HARDWARE_ESP32_DEV) //SP5IOU fix for nothing on serial port for ESP32_dev
      initialize_serial_ports();        // Goody - this is available for testing startup issues
+     #if defined(FEATURE_BT_KEYBOARD)
+      initialize_bt_keyboard();
+     #endif
   #endif
   // initialize_debug_startup();       // Goody - this is available for testing startup issues
   // debug_blink();                    // Goody - this is available for testing startup issues
@@ -22800,6 +23099,10 @@ void loop()
 
     #ifdef FEATURE_PS2_KEYBOARD
       check_ps2_keyboard();
+    #endif
+    
+    #ifdef FEATURE_BT_KEYBOARD
+      check_bt_keyboard();
     #endif
     
     #if defined(FEATURE_USB_KEYBOARD) || defined(FEATURE_USB_MOUSE)
