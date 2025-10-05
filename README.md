@@ -10,6 +10,9 @@ https://github.com/k3ng/k3ng_cw_keyer/wiki
 
 ***********************  Oct 4, 2025  K7MDL *****************************
 
+NOTE - I was unable to ge teh BT Classic keyboard Logitech K380 working under Arduino.  BLE works fine.  I ported this over to the ESP-IDF with Arduini32 extension and it works on both BT abnd BLE there.  I do not plan do anything with this and may delete it in a short while afewer I figure out the best way to start merging these changes into the main K3NG code, which is 3 years newer than this.
+Use https://github.com/K7MDL2/K3NG_Keyer_ESP32_BT_Keyboard instead of this.
+
 This repository is forked from https://github.com/aimeiz/k3ng_cw_keyer-master_2022 repository which was modified 3 years ago to work on some flavor of ESP32.  After changing the pin assignments it workes on my ESP32-WROOM-32 dev board.  
 
 I then integrated a BT Keyboard library from https://github.com/turgu1/bt-keyboard.  It is a bit different in that the ESP32 is a HID host connecting to a BT keyboard for input.  Most examples just convert a USB or PS2 keyboard to BT to connect to a PC.
